@@ -7,6 +7,7 @@ const App = () => {
   const [newNote, setNewNote] = useState({
     title: "",
     content: "",
+    color: "", // Added to track selected color
     options: [
       { value: "red", label: "RED" },
       { value: "blue", label: "BLUE" },
@@ -23,8 +24,14 @@ const App = () => {
     });
   };
 
+  const handleSelectChange = (selectedOption) => {
+    setNewNote({
+      ...newNote,
+      color: selectedOption ? selectedOption.value : "",
+    });
+  };
+
   useEffect(() => {
-    // Fetch all notes on component mount
     fetchNotes();
   }, []);
 
@@ -43,19 +50,25 @@ const App = () => {
       const response = await fetch(`http://localhost:5000/api/notes/${id}`);
       const data = await response.json();
       setSelectedNote(data);
+      setNewNote({
+        title: data.title,
+        content: data.content,
+        color: data.color || "",
+        options: newNote.options,
+      });
     } catch (error) {
       console.error(`Error fetching note with id ${id}:`, error);
     }
   };
 
-  const addNote = async (newNote) => {
+  const addNote = async (note) => {
     try {
       const response = await fetch("http://localhost:5000/api/notes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newNote),
+        body: JSON.stringify(note),
       });
 
       const data = await response.json();
@@ -65,6 +78,7 @@ const App = () => {
       setNewNote({
         title: "",
         content: "",
+        color: "",
       });
     } catch (error) {
       console.error("Error adding a new note:", error);
@@ -94,10 +108,11 @@ const App = () => {
       setNotes(updatedNotes);
       setSelectedNote(null); // Clear the selected note after updating
 
-      // Update the form fields with the new values
+      // Clear the form fields
       setNewNote({
-        title: data.title,
-        content: data.content,
+        title: "",
+        content: "",
+        color: "",
       });
     } catch (error) {
       console.error(`Error updating note with ID ${noteId}:`, error);
@@ -106,11 +121,10 @@ const App = () => {
 
   const deleteNote = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/notes/${id}`, {
+      await fetch(`http://localhost:5000/api/notes/${id}`, {
         method: "DELETE",
       });
 
-      const data = await response.json();
       setNotes(notes.filter((note) => note._id !== id));
     } catch (error) {
       console.error(`Error deleting note with id ${id}:`, error);
@@ -124,7 +138,7 @@ const App = () => {
       <ul>
         {notes.map((note) => (
           <li key={note._id}>
-            {note.title} - {note.content}
+            {note.title} - {note.content} - Color: {note.color || "None"}
             {/* Add buttons for actions (view, update, delete) */}
             <button onClick={() => fetchNoteById(note._id)}>View</button>
             <button onClick={() => setSelectedNote(note)}>Update</button>
@@ -141,6 +155,7 @@ const App = () => {
             updateNote(selectedNote._id, {
               title: newNote.title || selectedNote.title,
               content: newNote.content || selectedNote.content,
+              color: newNote.color || selectedNote.color,
             });
           }}
         >
@@ -163,25 +178,27 @@ const App = () => {
             />
           </label>
           <br />
+          <div style={{ margin: 20, width: 200 }}>
+            <Select
+              options={newNote.options}
+              placeholder="Select color"
+              value={newNote.options.find((option) => option.value === newNote.color)}
+              onChange={handleSelectChange}
+              isSearchable
+            />
+          </div>
           <button type="submit">Update Note</button>
         </form>
       )}
 
       {/* Add a new note */}
-      {/* <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          addNote({ title: 'New Note', content: 'New Content' });
-        }}
-      >
-        <button type="submit">Add New Note</button>
-      </form> */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           addNote({
             title: newNote.title || "New Note",
             content: newNote.content || "New Content",
+            color: newNote.color || "white", // Default color if not selected
           });
         }}
       >
@@ -207,9 +224,9 @@ const App = () => {
         <div style={{ margin: 20, width: 200 }}>
           <Select
             options={newNote.options}
-            placeholder="select colour"
-            onChange={handleInputChange}
-            isMulti
+            placeholder="Select color"
+            value={newNote.options.find((option) => option.value === newNote.color)}
+            onChange={handleSelectChange}
             isSearchable
           />
         </div>

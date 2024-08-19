@@ -9,6 +9,10 @@ const noteSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  color: {
+    type: String,  // You might also use a specific set of strings or enum if you want to restrict colors
+    default: 'white', // Default color if none is provided
+  },
 }, {
   timestamps: true,
 });
